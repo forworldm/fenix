@@ -18,6 +18,9 @@ import org.gradle.internal.logging.text.StyledTextOutputFactory
 import static org.gradle.api.tasks.testing.TestResult.ResultType
 
 android {
+    if (gradle.hasProperty('localProperties.ndkVersion')) {
+        ndkVersion gradle."localProperties.ndkVersion"
+    }
     compileSdkVersion Config.compileSdkVersion
 
     if (project.hasProperty("testBuildType")) {
@@ -72,8 +75,10 @@ android {
     def releaseTemplate = {
         // We allow disabling optimization by passing `-PdisableOptimization` to gradle. This is used
         // in automation for UI testing non-debug builds.
-        shrinkResources !project.hasProperty("disableOptimization")
-        minifyEnabled !project.hasProperty("disableOptimization")
+        // shrinkResources !project.hasProperty("disableOptimization")
+        // minifyEnabled !project.hasProperty("disableOptimization")
+        shrinkResources !gradle.hasProperty("localProperties.disallowShrink")
+        minifyEnabled !gradle.hasProperty("localProperties.disallowMinify")
         proguardFiles 'proguard-android-optimize-3.5.0-modified.txt', 'proguard-rules.pro'
         matchingFallbacks = ['release'] // Use on the "release" build type in dependencies (AARs)
 
@@ -190,10 +195,10 @@ android {
         targetCompatibility JavaVersion.VERSION_1_8
     }
 
-    lintOptions {
-        lintConfig file("lint.xml")
-        baseline file("lint-baseline.xml")
-    }
+    // lintOptions {
+    //     lintConfig file("lint.xml")
+    //     baseline file("lint-baseline.xml")
+    // }
 
     packagingOptions {
         exclude 'META-INF/atomicfu.kotlin_module'
@@ -270,7 +275,7 @@ android.applicationVariants.all { variant ->
 
     buildConfigField 'String', 'SENTRY_TOKEN', 'null'
     if (!isDebug) {
-        buildConfigField 'boolean', 'CRASH_REPORTING', 'true'
+        buildConfigField 'boolean', 'CRASH_REPORTING', 'false'
         // Reading sentry token from local file (if it exists). In a release task on taskcluster it will be available.
         try {
             def token = new File("${rootDir}/.sentry_token").text.trim()
@@ -280,7 +285,7 @@ android.applicationVariants.all { variant ->
         buildConfigField 'boolean', 'CRASH_REPORTING', 'false'
     }
 
-    if (!isDebug) {
+    if (!isDebug && false) {
         buildConfigField 'boolean', 'TELEMETRY', 'true'
     } else {
         buildConfigField 'boolean', 'TELEMETRY', 'false'
@@ -289,7 +294,7 @@ android.applicationVariants.all { variant ->
     def buildDate = Config.generateBuildDate()
     // Setting buildDate with every build changes the generated BuildConfig, which slows down the
     // build. Only do this for non-debug builds, to speed-up builds produced during local development.
-    if (isDebug) {
+    if (isDebug || true) {
         buildConfigField 'String', 'BUILD_DATE', '"debug build"'
     } else {
         buildConfigField 'String', 'BUILD_DATE', '"' + buildDate + '"'
@@ -571,7 +576,7 @@ dependencies {
     // depend on a separate library for unit tests. This will be removed in future releases.
     testImplementation "org.mozilla.telemetry:glean-forUnitTests:${project.ext.glean_version}"
 
-    lintChecks project(":mozilla-lint-rules")
+    // lintChecks project(":mozilla-lint-rules")
 }
 
 if (project.hasProperty("coverage")) {

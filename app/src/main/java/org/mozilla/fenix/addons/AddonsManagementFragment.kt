@@ -5,13 +5,23 @@
 package org.mozilla.fenix.addons
 
 import android.content.Context
+import android.net.Uri
 import android.os.Bundle
+import android.text.InputType.TYPE_CLASS_TEXT
+import android.text.InputType.TYPE_TEXT_VARIATION_URI
 import android.view.Gravity
 import android.view.View
+import android.view.ViewGroup
+import android.view.ViewGroup.LayoutParams.MATCH_PARENT
+import android.view.ViewGroup.LayoutParams.WRAP_CONTENT
 import android.view.accessibility.AccessibilityEvent
+import android.widget.EditText
+import android.widget.Toast
 import androidx.annotation.VisibleForTesting
+import androidx.appcompat.app.AlertDialog
 import androidx.core.content.res.ResourcesCompat
 import androidx.core.view.isVisible
+import androidx.core.widget.addTextChangedListener
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
@@ -42,6 +52,7 @@ import org.mozilla.fenix.ext.showToolbar
 import org.mozilla.fenix.ext.runIfFragmentIsAttached
 import org.mozilla.fenix.theme.ThemeManager
 import java.lang.ref.WeakReference
+import java.util.UUID
 import java.util.concurrent.CancellationException
 
 /**
@@ -70,6 +81,7 @@ class AddonsManagementFragment : Fragment(R.layout.fragment_add_ons_management) 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         bindRecyclerView(view)
+        bindAddonButton(view)
     }
 
     override fun onResume() {
@@ -90,6 +102,57 @@ class AddonsManagementFragment : Fragment(R.layout.fragment_add_ons_management) 
         adapter = null
     }
 
+    private fun bindAddonButton(view: View) {
+        val fab = view.add_ons_management_install
+        fab.setOnClickListener {
+            val ctx = requireActivity()
+            val input = EditText(ctx)
+            input.inputType = TYPE_CLASS_TEXT or TYPE_TEXT_VARIATION_URI
+            input.layoutParams = ViewGroup.LayoutParams(MATCH_PARENT, WRAP_CONTENT)
+            val dialog = AlertDialog.Builder(requireActivity())
+                .setTitle(R.string.mozac_feature_addons_install_addon_content_description)
+                .setView(input)
+                .setPositiveButton(android.R.string.ok) { _, _ ->
+                    val addon = Addon(
+                        id = UUID.randomUUID().toString(),
+                        downloadUrl = input.text.toString()
+                    )
+                    isInstallationInProgress = true
+                    requireContext().components.addonManager.installAddon(addon, onSuccess = {
+                        isInstallationInProgress = false
+                        Toast.makeText(
+                            ctx, getString(
+                                R.string.mozac_feature_addons_successfully_installed,
+                                addon.downloadUrl
+                            ), Toast.LENGTH_SHORT
+                        ).show()
+                    }, onError = { _, _ ->
+                        isInstallationInProgress = false
+                        Toast.makeText(
+                            ctx,
+                            getString(
+                                R.string.mozac_feature_addons_failed_to_install,
+                                addon.downloadUrl
+                            ),
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    })
+                }.setNegativeButton(android.R.string.cancel) { _, _ -> }
+                .create()
+            input.addTextChangedListener(afterTextChanged = {
+                val url = Uri.parse(it.toString())
+                dialog.getButton(AlertDialog.BUTTON_POSITIVE).isEnabled = when (url.scheme) {
+                    "https", "http" -> !url.host.isNullOrEmpty()
+                    else -> false
+                }
+            })
+            dialog.setOnShowListener {
+                dialog.getButton(AlertDialog.BUTTON_POSITIVE).isEnabled = false
+            }
+            dialog.show()
+        }
+    }
+
     private fun bindRecyclerView(view: View) {
         val managementView = AddonsManagementView(
             navController = findNavController(),
@@ -105,7 +168,7 @@ class AddonsManagementFragment : Fragment(R.layout.fragment_add_ons_management) 
         val allowCache = args.installAddonId == null || installExternalAddonComplete
         lifecycleScope.launch(IO) {
             try {
-                val addons = requireContext().components.addonManager.getAddons(allowCache = allowCache)
+                val addons = requireContext().components.addonManager.getAllAddons(allowCache = allowCache)
                 // Add-ons that should be excluded in Mozilla Online builds
                 val excludedAddonIDs = if (Config.channel.isMozillaOnline &&
                     !BuildConfig.MOZILLA_ONLINE_ADDON_EXCLUSIONS.isNullOrEmpty()) {

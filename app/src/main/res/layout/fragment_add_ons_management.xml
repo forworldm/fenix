@@ -4,6 +4,7 @@
    - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
 
 <androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
@@ -40,5 +41,18 @@
         android:textColor="?secondaryText"
         android:textSize="16sp"
         android:visibility="gone"/>
+
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/add_ons_management_install"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="end|bottom"
+        android:layout_margin="16dp"
+        android:backgroundTint="?android:colorAccent"
+        android:contentDescription="@string/mozac_feature_addons_install_addon_content_description"
+        android:src="@drawable/ic_new"
+        android:tint="@color/white_color"
+        app:layout_behavior=".addons.InstallAddonButtonBehaviour"
+        app:rippleColor="?android:textColorSecondary" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

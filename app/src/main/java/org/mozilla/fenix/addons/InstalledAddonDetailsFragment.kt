@@ -57,7 +57,7 @@ class InstalledAddonDetailsFragment : Fragment() {
     private fun bindAddon(view: View) {
         lifecycleScope.launch(Dispatchers.IO) {
             try {
-                val addons = requireContext().components.addonManager.getAddons()
+                val addons = requireContext().components.addonManager.getAllAddons()
                 lifecycleScope.launch(Dispatchers.Main) {
                     runIfFragmentIsAttached {
                         addons.find { addon.id == it.id }.let {

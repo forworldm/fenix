@@ -114,7 +114,7 @@ open class FenixApplication : LocaleAwareApplication(), Provider {
             // Note that we are only initializing Glean here for "fenix" builds. "fennec" builds
             // will initialize in MigratingFenixApplication because we first need to migrate the
             // user's choice from Fennec.
-            initializeGlean()
+            // initializeGlean()
         }
 
         PerfStartup.appOnCreateToGleanInit.stopAndAccumulate(subsectionThroughGleanTimerId)

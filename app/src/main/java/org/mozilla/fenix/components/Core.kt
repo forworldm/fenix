@@ -136,7 +136,7 @@ class Core(
              * This is consistent with both Fennec and Firefox Desktop.
              */
             if (Config.channel.isNightlyOrDebug || Config.channel.isBeta) {
-                WebCompatReporterFeature.install(it, "fenix")
+                // WebCompatReporterFeature.install(it, "fenix")
             }
         }
     }
@@ -224,10 +224,10 @@ class Core(
             icons.install(engine, this)
 
             // Install the "ads" WebExtension to get the links in an partner page.
-            adsTelemetry.install(engine, this)
+            // adsTelemetry.install(engine, this)
 
             // Install the "cookies" WebExtension and tracks user interaction with SERPs.
-            searchTelemetry.install(engine, this)
+            // searchTelemetry.install(engine, this)
 
             WebNotificationFeature(
                 context, engine, icons, R.drawable.ic_status_logo,
